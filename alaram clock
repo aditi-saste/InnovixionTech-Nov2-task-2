@@ -1,0 +1,164 @@
+import tkinter as tk
+import datetime
+import pygame
+import threading
+import time
+
+# Global variable to track the alarm status
+alarm_triggered = False
+alarm_time = None
+
+def set_alarm(alarm_time):
+    global alarm_triggered
+    while True:
+        current_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+        if current_time == alarm_time and not alarm_triggered:
+            alarm_label.config(text="Wake up!", fg="red", font=("Arial", 18, "bold"))
+            pygame.init()
+            # Replace with your audio file
+            pygame.mixer.music.load('C:/Users/HP/Downloads/tere-bal-se-main-balwan-jubin-nautiyal-61160.mp3')
+            pygame.mixer.music.play()
+            alarm_triggered = True
+        elif alarm_triggered:
+            break
+        time.sleep(1)  # Check every second
+
+def stop_alarm():
+    global alarm_triggered
+    alarm_triggered = False
+    pygame.mixer.music.stop()
+    alarm_label.config(text="Alarm stopped", fg="green", font=("Arial", 12))
+
+def update_clock():
+    current_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+    clock_label.config(text=current_time)
+    clock_label.after(1000, update_clock)  # Update every second
+
+def start_alarm():
+    global alarm_time
+    entered_hour = entry_hour.get()
+    entered_minute = entry_minute.get()
+    entered_second = entry_second.get()
+
+    am_pm = "AM" if am_var.get() == 1 else "PM"
+    entered_time = f"{entered_hour.zfill(2)}:{entered_minute.zfill(2)}:{entered_second.zfill(2)} {am_pm}"  # Assuming time format is HH:MM:SS AM/PM
+
+    try:
+        alarm_time = datetime.datetime.strptime(entered_time, "%I:%M:%S %p").strftime("%I:%M:%S %p")
+        alarm_label.config(text=f"Alarm set for {alarm_time}", fg="green", font=("Arial", 12))
+        alarm_thread = threading.Thread(target=set_alarm, args=(alarm_time,))
+        alarm_thread.daemon = True
+        alarm_thread.start()
+    except ValueError:
+        alarm_label.config(text="Enter valid time in HH:MM:SS format", fg="red", font=("Arial", 12))
+
+def increment(hour_var, minute_var, second_var):
+    if hour_var:
+        hour = int(entry_hour.get())
+        if hour < 12:
+            hour += 1
+            entry_hour.delete(0, tk.END)
+            entry_hour.insert(tk.END, str(hour).zfill(2))
+
+    if minute_var:
+        minute = int(entry_minute.get())
+        if minute < 59:
+            minute += 1
+            entry_minute.delete(0, tk.END)
+            entry_minute.insert(tk.END, str(minute).zfill(2))
+
+    if second_var:
+        second = int(entry_second.get())
+        if second < 59:
+            second += 1
+            entry_second.delete(0, tk.END)
+            entry_second.insert(tk.END, str(second).zfill(2))
+
+def decrement(hour_var, minute_var, second_var):
+    if hour_var:
+        hour = int(entry_hour.get())
+        if hour > 1:
+            hour -= 1
+            entry_hour.delete(0, tk.END)
+            entry_hour.insert(tk.END, str(hour).zfill(2))
+
+    if minute_var:
+        minute = int(entry_minute.get())
+        if minute > 0:
+            minute -= 1
+            entry_minute.delete(0, tk.END)
+            entry_minute.insert(tk.END, str(minute).zfill(2))
+
+    if second_var:
+        second = int(entry_second.get())
+        if second > 0:
+            second -= 1
+            entry_second.delete(0, tk.END)
+            entry_second.insert(tk.END, str(second).zfill(2))
+
+def create_gui():
+    global entry_hour, entry_minute, entry_second, alarm_label, clock_label, am_var
+    root = tk.Tk()
+    root.title("Alarm Clock")
+    
+    clock_label = tk.Label(root, text="", font=("Arial", 16))
+    clock_label.grid(row=0, column=0, columnspan=9)
+
+    update_clock()  # Start the digital clock
+    
+    label = tk.Label(root, text="Enter alarm time (HH:MM:SS):", font=("Arial", 12))
+    label.grid(row=1, column=0, columnspan=9)
+
+    entry_hour = tk.Entry(root, font=("Arial", 12), width=3)
+    entry_hour.grid(row=3, column=0)
+
+    label_hour = tk.Label(root, text=":", font=("Arial", 12))
+    label_hour.grid(row=3, column=1)
+
+    entry_minute = tk.Entry(root, font=("Arial", 12), width=3)
+    entry_minute.grid(row=3, column=2)
+
+    label_minute = tk.Label(root, text=":", font=("Arial", 12))
+    label_minute.grid(row=3, column=3)
+
+    entry_second = tk.Entry(root, font=("Arial", 12), width=3)
+    entry_second.grid(row=3, column=4)
+
+    am_var = tk.IntVar()
+    am_btn = tk.Radiobutton(root, text="AM", variable=am_var, value=1, font=("Arial", 12))
+    am_btn.grid(row=3, column=5)
+
+    pm_btn = tk.Radiobutton(root, text="PM", variable=am_var, value=2, font=("Arial", 12))
+    pm_btn.grid(row=3, column=6)
+
+    increment_hour_btn = tk.Button(root, text="▲", command=lambda: increment(True, False, False), font=("Arial", 10))
+    increment_hour_btn.grid(row=2, column=0)
+
+    decrement_hour_btn = tk.Button(root, text="▼", command=lambda: decrement(True, False, False), font=("Arial", 10))
+    decrement_hour_btn.grid(row=4, column=0)
+
+    increment_minute_btn = tk.Button(root, text="▲", command=lambda: increment(False, True, False), font=("Arial", 10))
+    increment_minute_btn.grid(row=2, column=2)
+
+    decrement_minute_btn = tk.Button(root, text="▼", command=lambda: decrement(False, True, False), font=("Arial", 10))
+    decrement_minute_btn.grid(row=4, column=2)
+
+    increment_second_btn = tk.Button(root, text="▲", command=lambda: increment(False, False, True), font=("Arial", 10))
+    increment_second_btn.grid(row=2, column=4)
+
+    decrement_second_btn = tk.Button(root, text="▼", command=lambda: decrement(False, False, True), font=("Arial", 10))
+    decrement_second_btn.grid(row=4, column=4)
+
+    set_button = tk.Button(root, text="Set Alarm", command=start_alarm, font=("Arial", 12), bg="lightblue")
+    set_button.grid(row=5, column=0, columnspan=9)
+
+    stop_button = tk.Button(root, text="Stop Alarm", command=stop_alarm, font=("Arial", 12), bg="lightgreen")
+    stop_button.grid(row=6, column=0, columnspan=9)
+
+    alarm_label = tk.Label(root, text="", font=("Arial", 14))
+    alarm_label.grid(row=7, column=0, columnspan=9)
+
+    root.mainloop()
+
+if __name__ == "__main__":
+    create_gui()
